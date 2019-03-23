@@ -204,4 +204,7 @@
         <item>SUPL_PORT=7276</item>
         <item>SUPL_MODE=1</item>
    </string-array>
+
+    <!-- Whether UI for multi user should be shown -->
+    <bool name="config_enableMultiUserUI">true</bool>
 </resources>
