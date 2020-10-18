@@ -92,6 +92,8 @@ TARGET_PROCESS_SDK_VERSION_OVERRIDE := \
     /system/vendor/lib/hw/gps.exynos4.vendor.so=22 \
     /system/vendor/bin/glgps=22
 
+TARGET_HAS_MEMFD_BACKPORT := true
+
 WITH_DEXPREOPT := true
 USE_DEX2OAT_DEBUG := false
 WITH_DEXPREOPT_DEBUG_INFO := false
