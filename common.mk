@@ -78,6 +78,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PACKAGES += \
     android.hardware.light@2.0-service.samsung
 
+# Charger
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.charger.enable_suspend=true
+
 # Audio
 PRODUCT_PACKAGES += \
     android.hardware.audio@6.0-impl \
