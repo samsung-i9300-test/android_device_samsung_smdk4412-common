@@ -76,6 +76,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 #PRODUCT_PACKAGES += \
 #    vendor.lineage.trust@1.0-service
 
+# TextClassifier
+PRODUCT_COPY_FILES += \
+    external/libtextclassifier/native/models/textclassifier.ru.model:$(TARGET_COPY_OUT_SYSTEM)/etc/textclassifier/textclassifier.ru.model
+
 # Battery
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.config.small_battery=true
