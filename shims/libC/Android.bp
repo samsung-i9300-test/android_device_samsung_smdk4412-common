@@ -1,0 +1,18 @@
+// Copyright 2012 The Android Open Source Project
+
+cc_library {
+    name: "libC",
+    vendor: true,
+
+    srcs: [
+        "pthread_join.cpp",
+    ],
+    system_shared_libs: [
+        "libc",
+        "libdl_android",
+    ],
+    cflags: [
+        "-Werror",
+        // "-DLOG_NDEBUG=0",
+    ],
+}

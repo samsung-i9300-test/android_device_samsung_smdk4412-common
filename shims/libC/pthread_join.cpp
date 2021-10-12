@@ -28,12 +28,14 @@
 
 #include <pthread.h>
 #include <stdint.h>
-
 #include <android/api-level.h>
+
+extern "C" void android_set_application_target_sdk_version(int target_sdk_level);
 
 extern "C" {
 
 int Pthread_join(pthread_t t, void** return_value) {
+	android_set_application_target_sdk_version(__ANDROID_API_N_MR1__);
 	return pthread_join(t, return_value);
 }
 
