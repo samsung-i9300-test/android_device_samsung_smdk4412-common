@@ -94,12 +94,13 @@ MetadataBufferType CameraSource::metaDataStoredInVideoBuffers() const {
 
     // Output buffers will contain metadata if camera sends us buffer in metadata mode or via
     // buffer queue.
-    switch (mVideoBufferMode) {
+    /*switch (mVideoBufferMode) {
         case hardware::ICamera::VIDEO_BUFFER_MODE_BUFFER_QUEUE:
             return kMetadataBufferTypeANWBuffer;
         default:
             return kMetadataBufferTypeInvalid;
-    }
+    }*/
+            return kMetadataBufferTypeInvalid;
 }
 
 } // namespace android
