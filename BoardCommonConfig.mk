@@ -71,8 +71,11 @@ BOARD_KERNEL_CMDLINE := console=ttySAC2,115200
 BOARD_KERNEL_IMAGE_NAME := zImage
 BOARD_KERNEL_BASE := 0x40000000
 BOARD_KERNEL_PAGESIZE := 2048
-#KERNEL_TOOLCHAIN := prebuilts/gcc/$(HOST_OS)-x86/arm/arm-eabi-4.8/bin
-#TARGET_KERNEL_CROSS_COMPILE_PREFIX := arm-eabi-
+TOP_PATH := $(realpath $(TOP))
+KERNEL_TOOLCHAIN := $(TOP_PATH)/pprebuilts/gcc/$(HOST_OS)-x86/arm/arm-linux-androideabi-4.9-1/bin
+TARGET_KERNEL_CROSS_COMPILE_PREFIX := arm-linux-androidkernel-
+TARGET_KERNEL_ADDITIONAL_FLAGS := \
+    HOSTCFLAGS="-fuse-ld=lld -Wno-unused-command-line-argument"
 LZMA_RAMDISK_TARGETS := recovery
 
 TARGET_PROCESS_SDK_VERSION_OVERRIDE += \
