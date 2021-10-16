@@ -44,6 +44,10 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/restart_rild.sh:system/vendor/bin/restart_rild.sh \
     $(LOCAL_PATH)/configs/rild_restart.rc:system/vendor/etc/init/rild_restart.rc
 
+# Shim providing strdup8to16 for RIL
+PRODUCT_PACKAGES += \
+    libCutils
+
 # Gps
 PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/configs/gps.conf:system/etc/gps.conf \

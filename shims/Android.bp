@@ -1,5 +1,6 @@
 subdirs = [
     "libC",
+    "libCutils",
     "libsuspend-shim",
 ]
 
