@@ -321,7 +321,7 @@ $(call inherit-product, vendor/samsung/smdk4412-common/smdk4412-common-vendor.mk
 #$(call inherit-product, device/fluid/sepolicy/exynos/sepolicy.mk)
 
 TARGET_SYSTEM_PROP += \
-    $(COMMON_PATH)/system.prop
+    $(COMMON_PATH)/smdk4x12.prop
 
 # Art
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
