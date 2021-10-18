@@ -1,3 +1,4 @@
+#pragma clang diagnostic ignored "-Wformat"
 #include "secril-shim.h"
 #include "secril-sap.h"
 
@@ -805,6 +806,8 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 		RLOGE("%s: couldn't find original RIL_Init!\n", __FUNCTION__);
 		goto fail_after_dlopen;
 	}
+
+	RLOGE("%s: RIL_Init = %x, origRil = %x", __func__, origRilInit, origRil);
 
 	// Fix RIL issues by patching memory
 	patchMem(origRil);
