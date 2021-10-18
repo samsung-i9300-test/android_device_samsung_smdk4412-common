@@ -43,11 +43,11 @@ PRODUCT_COPY_FILES := \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/tweaks.rc:system/vendor/etc/init/tweaks.rc
 
-# Disable traced and iorapd
+# Enable iorapd
 PRODUCT_PROPERTY_OVERRIDES += \
-	ro.iorapd.enable=false
-
-#	persist.traced.enable=0
+	ro.iorapd.enable=true \
+	iorapd.perfetto.enable=true \
+	iorapd.readahead.enable=true
 
 # RIL subscription workaround
 PRODUCT_COPY_FILES += \
