@@ -16,7 +16,9 @@
 
 COMMON_PATH := device/samsung/smdk4412-common
 
-DEVICE_PACKAGE_OVERLAYS := $(COMMON_PATH)/overlay
+DEVICE_PACKAGE_OVERLAYS := \
+    $(COMMON_PATH)/overlay \
+    $(COMMON_PATH)/overlay-lineage
 
 PRODUCT_BUILD_PROP_OVERRIDES += BUILD_UTC_DATE=0
 
