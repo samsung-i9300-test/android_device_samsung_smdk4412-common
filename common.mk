@@ -84,8 +84,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Audio
 PRODUCT_PACKAGES += \
-    android.hardware.audio@6.0-impl \
-    android.hardware.audio.effect@6.0-impl \
+    android.hardware.audio@7.0-impl \
+    android.hardware.audio.effect@7.0-impl \
+    android.hardware.audio.effect@2.0-service \
+    android.hardware.audio.service \
     audio.a2dp.default \
     audio.primary.smdk4x12 \
     audio.r_submix.default \
