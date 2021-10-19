@@ -7,11 +7,14 @@
 
 #define ATOI_NULL_HANDLED(x) (x ? atoi(x) : 0)
 
-/* A base pointer of the wrapped lib */
-uint32_t *gElfPtr = NULL;
+/* A base pointer to the start of the wrapped lib */
+void *gElfPtr = NULL;
+
+/* A pointer to the .text section of wrapped lib */
+void *gBasePtr = NULL;
 
 /* A pointer to the BSS section of wrapped lib */
-uint32_t *gBssPtr = NULL;
+void *gBssPtr = NULL;
 
 void (*fReal_DumpStateLog)(char*, int);
 
@@ -780,13 +783,16 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 		goto fail_after_dlopen;
 	}
 
-	gElfPtr = (uint32_t *)pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0xaa000);
-	gBssPtr = (uint32_t *)pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0x7000);
+	gElfPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0xaa000);
+	gBssPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0x7000);
 	
-	fReal_DumpStateLog = gElfPtr + 0x3EE0C;
+	gBasePtr = origRilInit - 0x247C0;
+	
+	fReal_DumpStateLog = gBasePtr + 0x3EE0C;
 
-	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr);
-
+	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x, gBasePtr=%x, fReal_DumpStateLog = %x, DumpStateLog=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr, gBasePtr, fReal_DumpStateLog, dlsym(origRil, "DumpStateLog"));
+	
+	//fReal_DumpStateLog("_cp_RSP", 0);
 
 	// Fix RIL issues by patching memory
 	patchMem(origRil);
