@@ -13,6 +13,8 @@ LOCAL_SRC_FILES := \
 	sec-sap.cpp \
 	secril-shim.cpp
 
+LOCAL_SRC_FILES += pmparser.c
+
 LOCAL_SHARED_LIBRARIES := \
 	liblog \
 	libril \

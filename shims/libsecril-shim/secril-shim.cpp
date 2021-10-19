@@ -2,7 +2,15 @@
 #include "secril-shim.h"
 #include "secril-sap.h"
 
+#include "pmparser.h"
+
 #define ATOI_NULL_HANDLED(x) (x ? atoi(x) : 0)
+
+/* A base pointer of the wrapped lib */
+void *gElfPtr = NULL;
+
+/* A pointer to the BSS section of wrapped lib */
+void *gBssPtr = NULL;
 
 /* A copy of the original RIL function table. */
 static const RIL_RadioFunctions *origRilFunctions;
@@ -807,7 +815,11 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 		goto fail_after_dlopen;
 	}
 
-	RLOGE("%s: RIL_Init = %x, origRil = %x", __func__, origRilInit, origRil);
+	gElfPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0xaa000);
+	gBssPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0x7000);
+
+	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr);
+
 
 	// Fix RIL issues by patching memory
 	patchMem(origRil);
