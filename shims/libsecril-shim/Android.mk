@@ -11,7 +11,7 @@ LOCAL_SRC_FILES := \
 	sap-functions.cpp \
 	secril-sap.cpp \
 	sec-sap.cpp \
-	secril-shim.cpp
+	secril-shim.c
 
 LOCAL_SRC_FILES += pmparser.c
 

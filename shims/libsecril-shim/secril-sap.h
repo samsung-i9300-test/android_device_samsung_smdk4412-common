@@ -7,7 +7,14 @@
 #include <telephony/ril.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C"
+#endif
 struct RIL_Env* GetEnv(const struct RIL_Env *env);
+
+#ifdef __cplusplus
+extern "C"
+#endif
 void SetRadioFunctions(const RIL_RadioFunctions* radioFunctions);
 
 void SecSapConnect(void* param, void (*callback)(void* param, RIL_Errno e));

@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <binder/Parcel.h>
+//#include <binder/Parcel.h>
 #include <cutils/compiler.h>
 #include <cutils/properties.h>
 #include <sys/cdefs.h>
@@ -20,7 +20,10 @@
 
 #define RIL_LIB_PATH "/system/vendor/lib/libsec-ril.so"
 
-extern "C" const char * requestToString(int request);
+#ifdef __cplusplus
+extern "C"
+#endif
+const char * requestToString(int request);
 
 typedef struct
 {
@@ -51,11 +54,14 @@ typedef struct
   RIL_AppStatus_samsung applications[RIL_CARD_MAX_APPS];
 } RIL_CardStatus_v5_samsung;
 
+struct Parcel;
+struct RequestInfo;
+
 /* TODO: Do we really need to redefine these? They aren't in a header... */
 typedef struct {
     int requestNumber;
-    void (*dispatchFunction) (android::Parcel &p, struct RequestInfo *pRI);
-    int(*responseFunction) (android::Parcel &p, void *response, size_t responselen);
+    void (*dispatchFunction) (struct Parcel *p, struct RequestInfo *pRI);
+    int(*responseFunction) (struct Parcel *p, void *response, size_t responselen);
 } CommandInfo;
 
 typedef struct RequestInfo {

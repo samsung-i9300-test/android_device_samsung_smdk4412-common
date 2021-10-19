@@ -62,7 +62,7 @@ static RIL_Token GetTokenData(void (*callbackData)(void* param, RIL_Errno e, int
 
 // --------------------------------------------------------------------------
 // Public functions
-
+extern "C"
 struct RIL_Env* GetEnv(const struct RIL_Env *env)
 {
 	static struct RIL_Env rilEnv;
@@ -73,6 +73,7 @@ struct RIL_Env* GetEnv(const struct RIL_Env *env)
     return &rilEnv;
 }
 
+extern "C"
 void SetRadioFunctions(const RIL_RadioFunctions* radioFunctions)
 {
     s_radioFunctions = radioFunctions;
