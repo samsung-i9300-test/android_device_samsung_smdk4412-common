@@ -6,41 +6,11 @@
 
 #include "ril_private.h"
 
-#include "pmparser.h"
 
 #define ATOI_NULL_HANDLED(x) (x ? atoi(x) : 0)
 
-/* A base pointer to the start of the wrapped lib */
-void *gElfPtr = NULL;
-
-/* A pointer to the .text section of wrapped lib */
-void *gBasePtr = NULL;
-
-/* A pointer to the BSS section of wrapped lib */
-void *gBssPtr = NULL;
-
-/* Vendor blob stuff */
-
-/* verbose debugging flag pointer */
-int *bdbg_enable_ptr = NULL;
-
-struct hSecOem_struct *hSecOem_ptr = NULL;
-//struct hSecOem_struct *hSecOem = NULL;
-void *hash_table;
-
-void (*fReal_DumpStateLog)(char*, int);
-
-int *unk_E730C;
-
-int (*CreateRequest)(void *hSecOem, int request, void *data, int datalen, RIL_Token t);
-
-int (*SearchDataHash)(void *hash_table, int request, int *(*handler)(void *, int));
-
 /* A copy of the original RIL function table. */
 static const RIL_RadioFunctions *origRilFunctions;
-
-/* A copy of the original RIL function table, got from pmparser */
-static const RIL_RadioFunctions *fReal_origRilFunctions;
 
 /* A copy of the ril environment passed to RIL_Init. */
 static const struct RIL_Env *rilEnv;
@@ -787,10 +757,8 @@ static void patchMem(void *libHandle) {
 
 const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **argv)
 {
-	RIL_RadioFunctions const* (*origRilInit)(const struct RIL_Env *env, int argc, char **argv);
 	static RIL_RadioFunctions shimmedFunctions;
 	static struct RIL_Env shimmedEnv;
-	void *origRil;
 
 	/* Shim the RIL_Env passed to the real RIL, saving a copy of the original */
 	rilEnv = env;
@@ -798,43 +766,16 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 	shimmedEnv.OnRequestComplete = onRequestCompleteShim;
 	shimmedEnv.OnUnsolicitedResponse = onUnsolicitedResponseShim;
 
-	/* Open and Init the original RIL. */
-
-	origRil = dlopen(RIL_LIB_PATH, RTLD_GLOBAL);
+	// origRil initialization is moved to ril_private.h
 	if (CC_UNLIKELY(!origRil)) {
 		RLOGE("%s: failed to load '" RIL_LIB_PATH  "': %s\n", __FUNCTION__, dlerror());
 		return NULL;
 	}
-
-	origRilInit = (const RIL_RadioFunctions *(*)(const struct RIL_Env *, int, char **))(dlsym(origRil, "RIL_Init"));
+	
 	if (CC_UNLIKELY(!origRilInit)) {
 		RLOGE("%s: couldn't find original RIL_Init!\n", __FUNCTION__);
 		goto fail_after_dlopen;
 	}
-
-	gElfPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0xaa000);
-	gBssPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0x7000);
-	
-	gBasePtr = origRilInit - 0x247C0;
-	
-	fReal_DumpStateLog = gBasePtr + 0x3EE0C;
-
-	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x, gBasePtr=%x, fReal_DumpStateLog = %x, DumpStateLog=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr, gBasePtr, fReal_DumpStateLog, dlsym(origRil, "DumpStateLog"));
-	
-	fReal_origRilFunctions = gElfPtr + 0xAA368;
-	
-	hSecOem_ptr = gElfPtr + 0xE71A8;
-	//hSecOem = *hSecOem_ptr;
-	unk_E730C = gElfPtr + 0xE730C;
-
-	CreateRequest = gBasePtr + 0x2361C;
-	SearchDataHash = gBasePtr + 0x20668;
-
-	bdbg_enable_ptr = gElfPtr + 0xAB93C;
-
-	// enable verbose debugging
-	*bdbg_enable_ptr = 1;
-	//fReal_DumpStateLog("_cp_RSP", 0);
 
 	// Fix RIL issues by patching memory
 	patchMem(origRil);
@@ -846,25 +787,12 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 			argc -= 2;
 		}
 	}
-	
-	ALOGE("%s: hSecOem_ptr=%x", __func__, hSecOem_ptr);
-	ALOGE("%s: hSecOem_ptr from dlsym=%x", __func__, dlsym(origRil, "hSecOem"));
-	ALOGE("%s: SearchDataHash=%x", __func__, SearchDataHash);
-	ALOGE("%s: SearchDataHash from dlsym=%x", __func__, dlsym(origRil, "SearchDataHash"));
-	hash_table = hSecOem_ptr->hash_table;
-	ALOGE("%s: hSecOem->hash_table=%x", __func__, hash_table);
 
 	origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
 	if (CC_UNLIKELY(!origRilFunctions)) {
 		RLOGE("%s: the original RIL_Init derped.\n", __FUNCTION__);
 		goto fail_after_dlopen;
 	}
-
-	//int *(*tmp_handler)(void *, int);
-	//int tmp_res = SearchDataHash(hash_table, RIL_REQUEST_GET_SIM_STATUS, &tmp_handler);
-	
-	//ALOGE("%s: tmp_res = %d", __func__, tmp_res);
-	
 	SetRadioFunctions(origRilFunctions);
 
 	/* Shim functions as needed. */
