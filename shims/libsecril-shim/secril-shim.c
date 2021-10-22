@@ -1,7 +1,10 @@
 #pragma clang diagnostic ignored "-Wformat"
 #pragma clang diagnostic ignored "-Wincompatible-pointer-types"
+#pragma clang diagnostic ignored "-Wunused-variable"
 #include "secril-shim.h"
 #include "secril-sap.h"
+
+#include "ril_private.h"
 
 #include "pmparser.h"
 
@@ -16,10 +19,28 @@ void *gBasePtr = NULL;
 /* A pointer to the BSS section of wrapped lib */
 void *gBssPtr = NULL;
 
+/* Vendor blob stuff */
+
+/* verbose debugging flag pointer */
+int *bdbg_enable_ptr = NULL;
+
+struct hSecOem_struct *hSecOem_ptr = NULL;
+//struct hSecOem_struct *hSecOem = NULL;
+void *hash_table;
+
 void (*fReal_DumpStateLog)(char*, int);
+
+int *unk_E730C;
+
+int (*CreateRequest)(void *hSecOem, int request, void *data, int datalen, RIL_Token t);
+
+int (*SearchDataHash)(void *hash_table, int request, int *(*handler)(void *, int));
 
 /* A copy of the original RIL function table. */
 static const RIL_RadioFunctions *origRilFunctions;
+
+/* A copy of the original RIL function table, got from pmparser */
+static const RIL_RadioFunctions *fReal_origRilFunctions;
 
 /* A copy of the ril environment passed to RIL_Init. */
 static const struct RIL_Env *rilEnv;
@@ -383,6 +404,14 @@ static void onRequestShim(int request, void *data, size_t datalen, RIL_Token t)
 	RLOGD("%s:\t\t\t\t\t>>> REQUEST\t\t\t: %s: data:%p datalen:%d token:%p\n", __FUNCTION__, requestToString(request), data, datalen, t);
 
 	switch (request) {
+		case RIL_REQUEST_GET_SIM_STATUS:
+			RLOGE("%s: RIL_REQUEST_GET_SIM_STATUS, datalen = %d, RIL_CardStatus_v5=%d, RIL_CardStatus_v6=%d, RIL_CardStatus_v5_samsung=%d", __func__, datalen, sizeof(RIL_CardStatus_v5), sizeof(RIL_CardStatus_v6), sizeof(RIL_CardStatus_v5_samsung));
+			
+			fReal_origRilFunctions->onRequest(request, data, datalen, t);
+			//CreateRequest(hSecOem_ptr, request, data, datalen, t);
+			return;
+			//break;
+		
                 /* Our RIL doesn't support this, so we implement this ourself */
                 case RIL_REQUEST_GET_CELL_INFO_LIST:
 			OnRequestGetCellInfoList(request, data, datalen, t);
@@ -792,6 +821,19 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 
 	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x, gBasePtr=%x, fReal_DumpStateLog = %x, DumpStateLog=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr, gBasePtr, fReal_DumpStateLog, dlsym(origRil, "DumpStateLog"));
 	
+	fReal_origRilFunctions = gElfPtr + 0xAA368;
+	
+	hSecOem_ptr = gElfPtr + 0xE71A8;
+	//hSecOem = *hSecOem_ptr;
+	unk_E730C = gElfPtr + 0xE730C;
+
+	CreateRequest = gBasePtr + 0x2361C;
+	SearchDataHash = gBasePtr + 0x20668;
+
+	bdbg_enable_ptr = gElfPtr + 0xAB93C;
+
+	// enable verbose debugging
+	*bdbg_enable_ptr = 1;
 	//fReal_DumpStateLog("_cp_RSP", 0);
 
 	// Fix RIL issues by patching memory
@@ -804,12 +846,25 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 			argc -= 2;
 		}
 	}
+	
+	ALOGE("%s: hSecOem_ptr=%x", __func__, hSecOem_ptr);
+	ALOGE("%s: hSecOem_ptr from dlsym=%x", __func__, dlsym(origRil, "hSecOem"));
+	ALOGE("%s: SearchDataHash=%x", __func__, SearchDataHash);
+	ALOGE("%s: SearchDataHash from dlsym=%x", __func__, dlsym(origRil, "SearchDataHash"));
+	hash_table = hSecOem_ptr->hash_table;
+	ALOGE("%s: hSecOem->hash_table=%x", __func__, hash_table);
 
 	origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
 	if (CC_UNLIKELY(!origRilFunctions)) {
 		RLOGE("%s: the original RIL_Init derped.\n", __FUNCTION__);
 		goto fail_after_dlopen;
 	}
+
+	//int *(*tmp_handler)(void *, int);
+	//int tmp_res = SearchDataHash(hash_table, RIL_REQUEST_GET_SIM_STATUS, &tmp_handler);
+	
+	//ALOGE("%s: tmp_res = %d", __func__, tmp_res);
+	
 	SetRadioFunctions(origRilFunctions);
 
 	/* Shim functions as needed. */
