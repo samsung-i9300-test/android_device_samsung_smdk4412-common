@@ -37,8 +37,8 @@ struct handler_struct {
 struct hSecOem_struct {
 	int unk1;
 	void *unk2;
-	void *unk3;
-	void *unk4;
+	int unk3;
+	int unk4;
 	void *unk5;
 	void *unk6;
 	void *hash_table;
@@ -124,7 +124,7 @@ int *unk_E71F8;
 int *unk_E71FC;
 int *unk_E97E0;
 
-void **reader_init_param;
+struct hSecOem_struct *reader_init_param;
 
 char *unk_E97D8;
 int *unk_E97DC;
@@ -154,6 +154,54 @@ void (*RIL_requestTimedCallback)();
 int *dword_AB8F4;
 int *dword_B1CA4;
 //int *dword_B1CA0;
+
+void *unk2 = 0;
+int unk3 = 0;
+int unk4 = 0;
+
+int runk1 = 0;
+void *runk2 = 0;
+int runk3 = 0;
+int runk4 = 0;
+void* print_gdb_thread_func(void *data);
+void* print_gdb_thread_func(void *data) {
+	ALOGE("print_gdb_thread_func init");
+	while (1) {
+		if (unk2 != hSecOem_ptr->unk2) {
+			unk2 = hSecOem_ptr->unk2;
+			ALOGE("%s: hSecOem_ptr->unk2 was set to %x", __func__, unk2);
+		}
+		if (unk3 != hSecOem_ptr->unk3) {
+			unk3 = hSecOem_ptr->unk3;
+			ALOGE("%s: hSecOem_ptr->unk3 was set to %x", __func__, unk3);
+		}
+		if (unk4 != hSecOem_ptr->unk4) {
+			unk4 = hSecOem_ptr->unk4;
+			ALOGE("%s: hSecOem_ptr->unk4 was set to %x", __func__, unk4);
+		}
+		
+		if (runk1 != reader_init_param->unk1) {
+			runk1 = reader_init_param->unk1;
+			ALOGE("%s: reader_init_param->unk1 was set to %x", __func__, runk1);
+		}		
+		if (runk2 != reader_init_param->unk2) {
+			runk2 = reader_init_param->unk2;
+			ALOGE("%s: reader_init_param->unk2 was set to %x", __func__, runk2);
+		}
+		if (runk3 != reader_init_param->unk3) {
+			runk3 = reader_init_param->unk3;
+			ALOGE("%s: reader_init_param->unk3 was set to %x", __func__, runk3);
+		}
+		if (runk4 != reader_init_param->unk4) {
+			runk4 = reader_init_param->unk4;
+			ALOGE("%s: reader_init_param->unk4 was set to %x", __func__, runk4);
+		}
+		
+		//usleep(1000);
+	}
+
+    return NULL;
+}
 
 struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char **argv)
 {
@@ -293,14 +341,16 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 			{
 				ALOGE("%s: init (20)", __func__);
 				res2 = InitMsgQueue(freeRxData);
-				ALOGE("%s: init (21)", __func__);
+				ALOGE("%s: InitMsgQueue(1) returns %x", __func__, res2);
+				hSecOem_ptr->unk3 = res2;
 				*unk_E71F8 = res2;
 				ALOGE("%s: init (22)", __func__);
 				if ( res2 )
 				{
 					ALOGE("%s: init (23)", __func__);
 					res3 = InitMsgQueue(freeRxData);
-					ALOGE("%s: init (24)", __func__);
+					ALOGE("%s: InitMsgQueue(2) returns %x", __func__, res3);
+					hSecOem_ptr->unk4 = res3;
 					res2 = res3;
 					*unk_E71FC = res3;
 					ALOGE("%s: init (25)", __func__);
@@ -309,22 +359,31 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 						ALOGE("%s: init (26)", __func__);
 						*unk_E97E0 = res3;
 						ALOGE("%s: init (27)", __func__);
-						*reader_init_param = hSecOem_ptr;
+						//!!!!!!!!!!!!!!!!!!*reader_init_param = hSecOem_ptr;
 						ALOGE("%s: init (28)", __func__);
 						strcpy(unk_E97D8, "/dev/dpram0");
 						ALOGE("%s: init (29)", __func__);
 						*unk_E97DC = *unk_E71F8;
 						ALOGE("%s: init (30), bdbg_enable=%d", __func__, *bdbg_enable_ptr);
 						*bdbg_enable_ptr = 1;
-						res2 = StartRXReader(*reader_init_param);
+						//hSecOem_ptr->unk2 = gElfPtr + 0x7E44A;
+						
+	ALOGE("%s: () hSecOem->unk1=%x", __func__, hSecOem_ptr->unk1);
+	ALOGE("%s: () hSecOem->unk2=%x", __func__, hSecOem_ptr->unk2);
+	ALOGE("%s: () hSecOem->unk3=%x", __func__, hSecOem_ptr->unk3);
+	ALOGE("%s: () hSecOem->unk4=%x", __func__, hSecOem_ptr->unk4);
+	
+						res2 = StartRXReader((void*)reader_init_param);
 						if ( res2 )
 						{
 							//*(_DWORD *)ril_tag = "RIL";
 							//errmsg = "Failed to start RX reader thread";
 							//goto LABEL_46;
-							ALOGE("Failed to start RX reader thread");
+							ALOGE("%s: Failed to start RX reader thread, res2=%d", __func__, res2);
 							return NULL;
 						}
+						ALOGE("%s: exit now", __func__);
+						return NULL;
 						ALOGE("%s: init (31)", __func__);
 						*dword_E71B4 = *unk_E97E4;
 						*dword_E71B8 = *unk_E97E8;
@@ -449,6 +508,8 @@ void libEvtLoading(void)
 	ALOGE("%s: SearchDataHash from dlsym=%x", __func__, dlsym(origRil, "SearchDataHash"));
 	hash_table = hSecOem_ptr->hash_table;
 	ALOGE("%s: hSecOem->hash_table=%x", __func__, hash_table);
+	ALOGE("%s: hSecOem->unk1=%x", __func__, hSecOem_ptr->unk1);
+	ALOGE("%s: hSecOem->unk2=%x", __func__, hSecOem_ptr->unk2);
 	ALOGE("%s: hSecOem->unk3=%x", __func__, hSecOem_ptr->unk3);
 	ALOGE("%s: hSecOem->unk4=%x", __func__, hSecOem_ptr->unk4);
 	

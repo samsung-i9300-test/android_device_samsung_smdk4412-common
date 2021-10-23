@@ -789,6 +789,19 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 	}
 	
 	bool use_oss_ril_init = property_get_bool("debug.use_oss_ril_init", false);
+	
+	if (property_get_bool("debug.ril_use_dbg_thread", false)) {
+		pthread_attr_t thread_attr;
+		pthread_t print_gdb_thread;
+
+		pthread_attr_init(&thread_attr);
+		pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+		int rc = pthread_create(&print_gdb_thread, &thread_attr,
+			print_gdb_thread_func, NULL);
+			
+		if (rc)
+			ALOGE("%s: failed to start thread! %d", __func__, rc);
+	}
 
 	if (use_oss_ril_init)
 		origRilFunctions = RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
@@ -796,6 +809,8 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 		origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
 	
 	ALOGE("%s: 1 hSecOem->hash_table=%x", __func__, hash_table);
+	ALOGE("%s: 1 hSecOem->unk1=%x", __func__, hSecOem_ptr->unk1);
+	ALOGE("%s: 1 hSecOem->unk2=%x", __func__, hSecOem_ptr->unk2);
 	ALOGE("%s: 1 hSecOem->unk3=%x", __func__, hSecOem_ptr->unk3);
 	ALOGE("%s: 1 hSecOem->unk4=%x", __func__, hSecOem_ptr->unk4);
 
