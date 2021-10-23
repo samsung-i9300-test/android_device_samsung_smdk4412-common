@@ -44,6 +44,20 @@ struct hSecOem_struct {
 	void *hash_table;
 };
 
+struct readerParam_struct {
+	struct hSecOem_struct *hSecOem;
+	char *reader_dev_ptr;
+	void *msgQueue1_ptr;
+	void *msgQueue2_ptr;
+};
+
+struct procParam_struct {
+	struct hSecOem_struct *hSecOem;
+	char *reader_dev_ptr;
+	void *msgQueue1_ptr;
+	void *msgQueue2_ptr;
+};
+
 void libEvtLoading(void) __attribute__((constructor));
 void libEvtUnloading(void) __attribute__((destructor));
 
@@ -124,12 +138,12 @@ int *unk_E71F8;
 int *unk_E71FC;
 int *unk_E97E0;
 
-struct hSecOem_struct *reader_init_param;
+struct readerParam_struct *reader_init_param;
 
-char *unk_E97D8;
+char **unk_E97D8;
 int *unk_E97DC;
 
-int (*StartRXReader)(void *param);
+int (*StartRXReader)(struct readerParam_struct *reader_init_param);
 
 int *dword_E71B4;
 int *unk_E97E4;
@@ -143,9 +157,9 @@ int *unk_E980C;
 int *unk_E9810;
 int (**unk_E9814)();
 int (*sub_23E5C)();
-void **proc_init_param;
+struct procParam_struct *proc_init_param;
 
-int (*StartRilProcessor)(void *param);
+int (*StartRilProcessor)(struct procParam_struct  *param);
 
 long long int *ril_features_E8F20;
 struct RIL_RadioFunctions *origRilFunctions_AA368;
@@ -159,10 +173,10 @@ void *unk2 = 0;
 int unk3 = 0;
 int unk4 = 0;
 
-int runk1 = 0;
-void *runk2 = 0;
-int runk3 = 0;
-int runk4 = 0;
+struct hSecOem_struct *hSecOem_tmp;
+char *reader_dev_ptr = 0;
+void *msgQueue1_ptr = 0;
+void *msgQueue2_ptr = 0;
 void* print_gdb_thread_func(void *data);
 void* print_gdb_thread_func(void *data) {
 	ALOGE("print_gdb_thread_func init");
@@ -180,21 +194,21 @@ void* print_gdb_thread_func(void *data) {
 			ALOGE("%s: hSecOem_ptr->unk4 was set to %x", __func__, unk4);
 		}
 		
-		if (runk1 != reader_init_param->unk1) {
-			runk1 = reader_init_param->unk1;
-			ALOGE("%s: reader_init_param->unk1 was set to %x", __func__, runk1);
+		if (hSecOem_tmp != reader_init_param->hSecOem) {
+			hSecOem_tmp = reader_init_param->hSecOem;
+			ALOGE("%s: reader_init_param->hSecOem was set to %x", __func__, hSecOem_tmp);
 		}		
-		if (runk2 != reader_init_param->unk2) {
-			runk2 = reader_init_param->unk2;
-			ALOGE("%s: reader_init_param->unk2 was set to %x", __func__, runk2);
+		if (reader_dev_ptr != reader_init_param->reader_dev_ptr) {
+			reader_dev_ptr = reader_init_param->reader_dev_ptr;
+			ALOGE("%s: reader_init_param->reader_dev_ptr was set to %s", __func__, reader_dev_ptr);
 		}
-		if (runk3 != reader_init_param->unk3) {
-			runk3 = reader_init_param->unk3;
-			ALOGE("%s: reader_init_param->unk3 was set to %x", __func__, runk3);
+		if (msgQueue1_ptr != reader_init_param->msgQueue1_ptr) {
+			msgQueue1_ptr = reader_init_param->msgQueue1_ptr;
+			ALOGE("%s: reader_init_param->msgQueue1_ptr was set to %x", __func__, msgQueue1_ptr);
 		}
-		if (runk4 != reader_init_param->unk4) {
-			runk4 = reader_init_param->unk4;
-			ALOGE("%s: reader_init_param->unk4 was set to %x", __func__, runk4);
+		if (msgQueue2_ptr != reader_init_param->msgQueue2_ptr) {
+			msgQueue2_ptr = reader_init_param->msgQueue2_ptr;
+			ALOGE("%s: reader_init_param->msgQueue2_ptr was set to %x", __func__, msgQueue2_ptr);
 		}
 		
 		//usleep(1000);
@@ -342,7 +356,7 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 				ALOGE("%s: init (20)", __func__);
 				res2 = InitMsgQueue(freeRxData);
 				ALOGE("%s: InitMsgQueue(1) returns %x", __func__, res2);
-				hSecOem_ptr->unk3 = res2;
+				reader_init_param->msgQueue1_ptr = (void*)res2;
 				*unk_E71F8 = res2;
 				ALOGE("%s: init (22)", __func__);
 				if ( res2 )
@@ -350,7 +364,7 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 					ALOGE("%s: init (23)", __func__);
 					res3 = InitMsgQueue(freeRxData);
 					ALOGE("%s: InitMsgQueue(2) returns %x", __func__, res3);
-					hSecOem_ptr->unk4 = res3;
+					reader_init_param->msgQueue2_ptr = (void*)res3;
 					res2 = res3;
 					*unk_E71FC = res3;
 					ALOGE("%s: init (25)", __func__);
@@ -359,10 +373,12 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 						ALOGE("%s: init (26)", __func__);
 						*unk_E97E0 = res3;
 						ALOGE("%s: init (27)", __func__);
-						//!!!!!!!!!!!!!!!!!!*reader_init_param = hSecOem_ptr;
+						reader_init_param->hSecOem = hSecOem_ptr;
 						ALOGE("%s: init (28)", __func__);
-						strcpy(unk_E97D8, "/dev/dpram0");
-						ALOGE("%s: init (29)", __func__);
+						*unk_E97D8 = gElfPtr + 0x7e44a;
+						//strcpy(unk_E97D8, "/dev/dpram0");
+						reader_init_param->reader_dev_ptr = gElfPtr + 0x7e44a;
+						ALOGE("%s: init (29), reader_dev_ptr = %s", __func__, reader_init_param->reader_dev_ptr);
 						*unk_E97DC = *unk_E71F8;
 						ALOGE("%s: init (30), bdbg_enable=%d", __func__, *bdbg_enable_ptr);
 						*bdbg_enable_ptr = 1;
@@ -373,7 +389,7 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	ALOGE("%s: () hSecOem->unk3=%x", __func__, hSecOem_ptr->unk3);
 	ALOGE("%s: () hSecOem->unk4=%x", __func__, hSecOem_ptr->unk4);
 	
-						res2 = StartRXReader((void*)reader_init_param);
+						res2 = StartRXReader(reader_init_param);
 						if ( res2 )
 						{
 							//*(_DWORD *)ril_tag = "RIL";
@@ -382,8 +398,8 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 							ALOGE("%s: Failed to start RX reader thread, res2=%d", __func__, res2);
 							return NULL;
 						}
-						ALOGE("%s: exit now", __func__);
-						return NULL;
+						//ALOGE("%s: exit now", __func__);
+						//return NULL;
 						ALOGE("%s: init (31)", __func__);
 						*dword_E71B4 = *unk_E97E4;
 						*dword_E71B8 = *unk_E97E8;
@@ -392,9 +408,12 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 						*unk_E980C = *unk_E71F8;
 						*unk_E9810 = *unk_E71FC;
 						*unk_E9814 = sub_23E5C;
-						*proc_init_param = hSecOem_ptr;
+						proc_init_param->hSecOem = hSecOem_ptr;
 						ALOGE("%s: init (32)", __func__);
-						if ( !StartRilProcessor(*proc_init_param) )
+						ALOGE("%s: exit now", __func__);
+						return origRilFunctions_AA368;
+						//return origRilFunctions_AA368;
+						if ( !StartRilProcessor(proc_init_param) )
 						{
 							ALOGE("%s: init (33)", __func__);
 							*unk_E71B0 = 0;
