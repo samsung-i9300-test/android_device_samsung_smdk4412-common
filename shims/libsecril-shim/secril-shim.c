@@ -787,8 +787,18 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 			argc -= 2;
 		}
 	}
+	
+	bool use_oss_ril_init = property_get_bool("debug.use_oss_ril_init", false);
 
-	origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
+	if (use_oss_ril_init)
+		origRilFunctions = RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
+	else
+		origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
+	
+	ALOGE("%s: 1 hSecOem->hash_table=%x", __func__, hash_table);
+	ALOGE("%s: 1 hSecOem->unk3=%x", __func__, hSecOem_ptr->unk3);
+	ALOGE("%s: 1 hSecOem->unk4=%x", __func__, hSecOem_ptr->unk4);
+
 	if (CC_UNLIKELY(!origRilFunctions)) {
 		RLOGE("%s: the original RIL_Init derped.\n", __FUNCTION__);
 		goto fail_after_dlopen;
