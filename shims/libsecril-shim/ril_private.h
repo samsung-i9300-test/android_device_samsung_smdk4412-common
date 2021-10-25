@@ -160,16 +160,13 @@ int *unk_E980C;
 int *unk_E9810;
 int (**unk_E9814)();
 int (*sub_23E5C)();
-int (*sub_24584)();
+RIL_TimedCallback sub_24584;
 struct procParam_struct *proc_init_param;
 
-int (*StartRilProcessor)(struct procParam_struct  *param);
+int (*StartRilProcessor)(struct procParam_struct *param);
 
 long long int *ril_features_E8F20;
 struct RIL_RadioFunctions *origRilFunctions_AA368;
-void (*RIL_requestTimedCallback)(void (*callback)(), struct hSecOem_struct *hSecOem_ptr, int *timeval);
-
-int TIMEVAL_1 = 1;
 
 int *dword_AB8F4;
 int *dword_B1CA4;
@@ -221,6 +218,11 @@ void* print_gdb_thread_func(void *data) {
 	}
 
     return NULL;
+}
+
+void RIL_requestTimedCallback(RIL_TimedCallback callback,
+            struct hSecOem_struct *hSecOem_ptr, struct timeval *relativeTime) {
+	(*s_rilenv_ptr)->RequestTimedCallback(callback, (void*)hSecOem_ptr, relativeTime);
 }
 
 struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char **argv)
@@ -371,7 +373,10 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 						if ( !StartRilProcessor(proc_init_param) )
 						{
 							*unk_E71B0 = 0;
-							RIL_requestTimedCallback(sub_24584, hSecOem_ptr, &TIMEVAL_1);
+							struct timeval relativeTime;
+							relativeTime.tv_sec = 1;
+
+							RIL_requestTimedCallback(sub_24584, hSecOem_ptr, &relativeTime);
 							return origRilFunctions_AA368;
 						}
 						ALOGE("Failed to start RIL processor thread");
@@ -552,7 +557,6 @@ void libEvtLoading(void)
 
 	ril_features_E8F20 = gElfPtr + 0xE8F20;
 	origRilFunctions_AA368 = gElfPtr + 0xAA368;
-	RIL_requestTimedCallback = gBasePtr + 0x24094;
 
 	dword_AB8F4 = gElfPtr + 0xAB8F4;
 	dword_B1CA4 = gElfPtr + 0xB1CA4;
