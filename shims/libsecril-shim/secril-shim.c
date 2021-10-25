@@ -807,7 +807,9 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 	//	origRilFunctions = RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
 	//else
 	RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
+	ALOGE("%s: s_rilenv_ptr = %x (RIL_Init1)", __func__, *s_rilenv_ptr);
 	origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
+	ALOGE("%s: s_rilenv_ptr = %x (origRilInit)", __func__, *s_rilenv_ptr);
 	
 	ALOGE("%s: 1 hSecOem->hash_table=%x", __func__, hash_table);
 	ALOGE("%s: 1 hSecOem->unk1=%x", __func__, hSecOem_ptr->unk1);
