@@ -1,6 +1,8 @@
 #ifndef RIL_PRIVATE_H
 #define RIL_PRIVATE_H
 
+#include <sys/mman.h>
+
 #include "pmparser.h"
 
 struct ril_request {
@@ -499,7 +501,8 @@ void libEvtLoading(void)
 	gBssPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0x7000);
 	
 	gBasePtr = origRilInit - 0x247C0;
-	
+	if (!mprotect(gBasePtr - 1, 0xab000, PROT_READ | PROT_WRITE | PROT_EXEC))
+		ALOGE("%s: mprotect failed!", __func__);
 	fReal_DumpStateLog = gBasePtr + 0x3EE0C;
 
 	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x, gBasePtr=%x, fReal_DumpStateLog = %x, DumpStateLog=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr, gBasePtr, fReal_DumpStateLog, dlsym(origRil, "DumpStateLog"));
