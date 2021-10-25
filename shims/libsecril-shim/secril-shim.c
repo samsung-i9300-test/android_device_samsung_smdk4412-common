@@ -787,9 +787,7 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 			argc -= 2;
 		}
 	}
-	
-	bool use_oss_ril_init = property_get_bool("debug.use_oss_ril_init", false);
-	
+
 	if (property_get_bool("debug.ril_use_dbg_thread", false)) {
 		pthread_attr_t thread_attr;
 		pthread_t print_gdb_thread;
@@ -803,13 +801,10 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 			ALOGE("%s: failed to start thread! %d", __func__, rc);
 	}
 
-	//if (use_oss_ril_init)
-	//	origRilFunctions = RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
-	//else
-	RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
+	origRilFunctions = RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
 	ALOGE("%s: s_rilenv_ptr = %x (RIL_Init1)", __func__, *s_rilenv_ptr);
-	origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
-	ALOGE("%s: s_rilenv_ptr = %x (origRilInit)", __func__, *s_rilenv_ptr);
+	//origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
+	//ALOGE("%s: s_rilenv_ptr = %x (origRilInit)", __func__, *s_rilenv_ptr);
 	
 	ALOGE("%s: 1 hSecOem->hash_table=%x", __func__, hash_table);
 	ALOGE("%s: 1 hSecOem->unk1=%x", __func__, hSecOem_ptr->unk1);

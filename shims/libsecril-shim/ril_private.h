@@ -55,9 +55,10 @@ struct readerParam_struct {
 
 struct procParam_struct {
 	struct hSecOem_struct *hSecOem;
-	char *reader_dev_ptr;
+	int *request_list_ptr;
 	void *msgQueue1_ptr;
 	void *msgQueue2_ptr;
+	int (*callback)();
 };
 
 void libEvtLoading(void) __attribute__((constructor));
@@ -159,13 +160,16 @@ int *unk_E980C;
 int *unk_E9810;
 int (**unk_E9814)();
 int (*sub_23E5C)();
+int (*sub_24584)();
 struct procParam_struct *proc_init_param;
 
 int (*StartRilProcessor)(struct procParam_struct  *param);
 
 long long int *ril_features_E8F20;
 struct RIL_RadioFunctions *origRilFunctions_AA368;
-void (*RIL_requestTimedCallback)();
+void (*RIL_requestTimedCallback)(void (*callback)(), struct hSecOem_struct *hSecOem_ptr, int *timeval);
+
+int TIMEVAL_1 = 1;
 
 int *dword_AB8F4;
 int *dword_B1CA4;
@@ -222,7 +226,6 @@ void* print_gdb_thread_func(void *data) {
 struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char **argv)
 {
 	const struct RIL_Env *rilEnv; // r7@1
-	int c; // r6@1
 	//void (__fastcall *tmp_func_ptr)(_DWORD); // r1@2
 	int this_tid; // r0@4
 	const char *msg; // r0@25
@@ -243,23 +246,10 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	char tmpVal1[PROPERTY_VALUE_MAX]; // [sp+10h] [bp-30h]@1
 	pthread_t newthread; // [sp+14h] [bp-2Ch]@16
 	memset(hSecOem_ptr, 0, 0x1EB8u);
-#if 1
-	ALOGE("%s: init (1)", __func__);
 
 	rilEnv = env;
 	memset(tmpVal1, 0, PROPERTY_VALUE_MAX);
-	//tmpVal1[0] = 0;
-	c = 0;
-	
-	ALOGE("%s: init (2)", __func__);
-	/*do
-	{
-		tmp_func_ptr = *(void (__fastcall **)(_DWORD))((char *)&off_AA7C0 + c);
-		c += 4;
-		tmp_func_ptr(&hSecOem);
-	}
-	while ( c != 56 );*/
-#endif
+
 	OemInitNetwork(hSecOem_ptr);
 	OemInitCall(hSecOem_ptr);
 	OemInitData(hSecOem_ptr);
@@ -274,16 +264,11 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	OemInitFactory(hSecOem_ptr);
 	OemInitImei(hSecOem_ptr);
 	OemInitCfg(hSecOem_ptr);	
-	
-#if 1
-	ALOGE("%s: init (3)", __func__);
 
 	hSecOem_ptr->unk1 = 1;
-	ALOGE("%s: init (4)", __func__);
 	pthread_mutex_init(unk_E71AC, 0);
-	ALOGE("%s: init (5)", __func__);
 	*unk_E71B0 = 0;
-	ALOGE("%s: init (6)", __func__);
+
 	if ( *bdbg_enable_ptr )
 	{
 		ALOGE("[*] RIL initialized: TID(%d)", gettid());
@@ -291,14 +276,11 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	/*if ( *bdbg_enable_ptr )
 	{
 		ALOGE("RIL features: 0x%llx", *ril_features_E8F20);
-	}
-	ALOGE("%s: init (7)", __func__);*/
-#endif
+	}*/
+
 	*s_rilenv_ptr = env;
 #if 0
-	ALOGE("%s: init (8)", __func__);
 	property_get("ril.RildInit", &tmpVal1, *isRildInit_7DA7B_ptr);
-	ALOGE("%s: init (9)", __func__);
 	if ( *bdbg_enable_ptr )
 		ALOGE("[RIL] IsRildInit? : %c", tmpVal1);
 	if ( tmpVal1[0] == 49 )
@@ -314,105 +296,64 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 			property_set("ril.rildreset", "1");
 			property_get("ril.rildreset", &tmpVal, *isRildInit_7DA7B_ptr);
 		}
-		/*if ( pthread_create(&newthread, 0, get_rildreset_log, &tmpVal) < 0 && *bdbg_enable_ptr )
-			ALOGE("[*] GetLog thread creation failed. Couldn't get rild reset log");*/
+		if ( pthread_create(&newthread, 0, get_rildreset_log, &tmpVal) < 0 && *bdbg_enable_ptr )
+			ALOGE("[*] GetLog thread creation failed. Couldn't get rild reset log");
 	}
 #endif
-	ALOGE("%s: init (10)", __func__);
 	Modem_Boot();
-	ALOGE("%s: init (11)", __func__);
-#if 0
 	while ( 1 )
 	{
 		res0 = getopt(argc, argv, "p:d:s:");
 		ALOGE("%s: init (12)", __func__);
 		if ( res0 == -1 )
 		{
-			ALOGE("%s: init (13)", __func__);
 			if ( *dword_AB8F4 < 0 && !*dword_B1CA0_ptr ) {
 				ALOGE("reference-ril requires: -p <tcp port> or -d /dev/tty_device");
 				return NULL;
 			}
-#endif
-#if 1
-			ALOGE("%s: init (14)", __func__);
+
 			ipc_debug_init(hSecOem_ptr, 0x1C23);
-			ALOGE("%s: init (15)", __func__);
 			StartMulticlient(hSecOem_ptr);
-			ALOGE("%s: init (16)", __func__);
 			res1 = BuildupReqHandlerHash(hSecOem_ptr);
-			ALOGE("%s: init (17)", __func__);
 			if ( res1 )
 				return NULL;
-			//DumpRequestTable(0, dump_req_tag);				// dump_req_tag is in argv?
-#endif
-#if 0
-			ALOGE("%s: init (18)", __func__);
+
 			res2 = InitEventHandling();
 			if ( res2 )
 			{
-//LABEL_46:
 				res2 = res1;
 				ALOGE("Failed to initialize event system");
 				return NULL;
 			}
-			ALOGE("%s: init (19)", __func__);
 			res1 = InitRequestList(request_list_E71C4, FreeRequest);
-			if ( res1 )
+			if (!res1 )
 			{
-				ALOGE("%s: init (fail 20)", __func__);
-				//*(_DWORD *)ril_tag1 = "RIL";
-				//errmsg1 = "Failed to create request list";
-			}
-			else
-			{
-				ALOGE("%s: init (20)", __func__);
 				res2 = InitMsgQueue(freeRxData);
 				ALOGE("%s: InitMsgQueue(1) returns %x", __func__, res2);
 				reader_init_param->msgQueue1_ptr = (void*)res2;
 				*unk_E71F8 = res2;
-				ALOGE("%s: init (22)", __func__);
 				if ( res2 )
 				{
-					ALOGE("%s: init (23)", __func__);
 					res3 = InitMsgQueue(freeRxData);
 					ALOGE("%s: InitMsgQueue(2) returns %x", __func__, res3);
 					reader_init_param->msgQueue2_ptr = (void*)res3;
 					res2 = res3;
 					*unk_E71FC = res3;
-					ALOGE("%s: init (25)", __func__);
 					if ( res3 )
 					{
-						ALOGE("%s: init (26)", __func__);
 						*unk_E97E0 = res3;
-						ALOGE("%s: init (27)", __func__);
 						reader_init_param->hSecOem = hSecOem_ptr;
-						ALOGE("%s: init (28)", __func__);
 						*unk_E97D8 = gElfPtr + 0x7e44a;
-						//strcpy(unk_E97D8, "/dev/dpram0");
 						reader_init_param->reader_dev_ptr = gElfPtr + 0x7e44a;
-						ALOGE("%s: init (29), reader_dev_ptr = %s", __func__, reader_init_param->reader_dev_ptr);
 						*unk_E97DC = *unk_E71F8;
-						ALOGE("%s: init (30), bdbg_enable=%d", __func__, *bdbg_enable_ptr);
 						*bdbg_enable_ptr = 1;
-						//hSecOem_ptr->unk2 = gElfPtr + 0x7E44A;
-						
-	ALOGE("%s: () hSecOem->unk1=%x", __func__, hSecOem_ptr->unk1);
-	ALOGE("%s: () hSecOem->unk2=%x", __func__, hSecOem_ptr->unk2);
-	ALOGE("%s: () hSecOem->unk3=%x", __func__, hSecOem_ptr->unk3);
-	ALOGE("%s: () hSecOem->unk4=%x", __func__, hSecOem_ptr->unk4);
-	
+
 						res2 = StartRXReader(reader_init_param);
 						if ( res2 )
 						{
-							//*(_DWORD *)ril_tag = "RIL";
-							//errmsg = "Failed to start RX reader thread";
-							//goto LABEL_46;
 							ALOGE("%s: Failed to start RX reader thread, res2=%d", __func__, res2);
 							return NULL;
 						}
-						//ALOGE("%s: exit now", __func__);
-						//return NULL;
 						ALOGE("%s: init (31)", __func__);
 						*dword_E71B4 = *unk_E97E4;
 						*dword_E71B8 = *unk_E97E8;
@@ -421,18 +362,16 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 						*unk_E980C = *unk_E71F8;
 						*unk_E9810 = *unk_E71FC;
 						*unk_E9814 = sub_23E5C;
-						proc_init_param->hSecOem = hSecOem_ptr;
-						ALOGE("%s: init (32)", __func__);
-						ALOGE("%s: exit now", __func__);
-						return origRilFunctions_AA368;
-						//return origRilFunctions_AA368;
+						proc_init_param->hSecOem = hSecOem_ptr; // E9804
+						proc_init_param->request_list_ptr = request_list_E71C4;
+						proc_init_param->msgQueue1_ptr = (void*)*unk_E71F8;
+						proc_init_param->msgQueue2_ptr = (void*)*unk_E71FC;
+						proc_init_param->callback = sub_23E5C;
+
 						if ( !StartRilProcessor(proc_init_param) )
 						{
-							ALOGE("%s: init (33)", __func__);
 							*unk_E71B0 = 0;
-							ALOGE("%s: init (34)", __func__);
-							RIL_requestTimedCallback();
-							ALOGE("%s: init (35)", __func__);
+							RIL_requestTimedCallback(sub_24584, hSecOem_ptr, &TIMEVAL_1);
 							return origRilFunctions_AA368;
 						}
 						ALOGE("Failed to start RIL processor thread");
@@ -464,25 +403,14 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 		if ( res0 == 115 )
 		{
 			*dword_B1CA4 = 1;
-			//msg2 = "Opening socket %s\n";
-			//optarg_int = atoi(optarg);
-			//memcpy((void*)dword_B1CA0, (void*)optarg);
 			*dword_B1CA0_ptr = optarg;
 			ALOGE("Opening socket %s", optarg);
-			//goto LABEL_28;
 		}
 		if ( res0 == 100 )
 		{
-			//optarg_int = atoi(optarg);
-			//*dword_B1CA0 = optarg_int;
-			//memcpy((void*)dword_B1CA0, (void*)optarg);
 			*dword_B1CA0_ptr = optarg;
 			ALOGE("Opening tty device %s", optarg);
-			//msg2 = ;
-			//goto LABEL_28;
 		}
-		
-		//break;
 	}
 
 	//msg = "reference-ril requires: -p <tcp port> or -d /dev/tty_device\n";
@@ -490,7 +418,6 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	//fputs(msg, (FILE *)((char *)&_sF + 168));
 //LABEL_34:
 	//fputs("reference-ril requires: -p <tcp port> or -d /dev/tty_device\n", (FILE *)((char *)&_sF + 168));
-#endif
 	return NULL;
 }
 
@@ -514,36 +441,16 @@ void libEvtLoading(void)
 	gBssPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0x7000);
 	
 	gBasePtr = origRilInit - 0x247C0;
+	
+#if 0
 	int res = mprotect(gBasePtr - 1, 0xab000, PROT_READ | PROT_WRITE | PROT_EXEC);
 	if (res) {
 		ALOGE("%s: mprotect failed! (%s) %d", __func__, strerror(res), res);
 	} else {
-		ALOGE("%s: patching RIL_Init", __func__);
-		
-		// NOP OemInit*() calls
-		//memcpy(gBasePtr - 1 + 0x247EE, "\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 14);
 
-		// NOP OemInit*() calls (0x247ee - 0x2482a)
-		memcpy(gBasePtr - 1 + 0x247ee, "\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 60);
-		
-		// NOP s_rilenv_ptr assignment
-		//memcpy(gBasePtr - 1 + 0x24856, "\x00\x46", 2);
-		
-		// NOP everything near the start of RIL_Init - doesn't work
-		/*memcpy(gBasePtr - 1 + 0x247cc, "\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 12);*/
-		
-		// NOP 0x247da - 0x2482a
-		memcpy(gBasePtr - 1 + 0x247da, "\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 80);
-		
-
-		memcpy(gBasePtr - 1 + 0x2482A,"\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 230);
-
-		// Modem_Boot() call
-		memcpy(gBasePtr - 1 + 0x24912, "\x00\x46\x00\x46", 4);
-		
-		// ipc_debug_init(), StartMulticlient(), BuildupReqHandlerHash(), DumpRequestTable()
-		memcpy(gBasePtr - 1 + 0x249D8, "\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 28);
 	}
+#endif
+	
 	fReal_DumpStateLog = gBasePtr + 0x3EE0C;
 
 	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x, gBasePtr=%x, fReal_DumpStateLog = %x, DumpStateLog=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr, gBasePtr, fReal_DumpStateLog, dlsym(origRil, "DumpStateLog"));
@@ -638,6 +545,7 @@ void libEvtLoading(void)
 	unk_E9810 = gElfPtr + 0xE9810;
 	unk_E9814 = gElfPtr + 0xE9814;
 	sub_23E5C = gBasePtr + 0x23E5C;
+	sub_24584 = gBasePtr + 0x24584;
 	proc_init_param = gElfPtr + 0xE9804;
 
 	StartRilProcessor = gBasePtr + 0x218B8;
