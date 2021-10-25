@@ -242,13 +242,14 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	char tmpVal[PROPERTY_VALUE_MAX]; // [sp+Fh] [bp-31h]@12
 	char tmpVal1[PROPERTY_VALUE_MAX]; // [sp+10h] [bp-30h]@1
 	pthread_t newthread; // [sp+14h] [bp-2Ch]@16
-	
+	memset(hSecOem_ptr, 0, 0x1EB8u);
+#if 1
 	ALOGE("%s: init (1)", __func__);
 
 	rilEnv = env;
 	tmpVal1[0] = 0;
 	c = 0;
-	memset(hSecOem_ptr, 0, 0x1EB8u);
+	
 	ALOGE("%s: init (2)", __func__);
 	/*do
 	{
@@ -257,7 +258,7 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 		tmp_func_ptr(&hSecOem);
 	}
 	while ( c != 56 );*/
-
+#endif
 	OemInitNetwork(hSecOem_ptr);
 	OemInitCall(hSecOem_ptr);
 	OemInitData(hSecOem_ptr);
@@ -272,6 +273,8 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	OemInitFactory(hSecOem_ptr);
 	OemInitImei(hSecOem_ptr);
 	OemInitCfg(hSecOem_ptr);	
+	
+#if 1
 	ALOGE("%s: init (3)", __func__);
 
 	hSecOem_ptr->unk1 = 1;
@@ -284,12 +287,14 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	{
 		ALOGE("[*] RIL initialized: TID(%d)", gettid());
 	}
-	if ( *bdbg_enable_ptr )
+	/*if ( *bdbg_enable_ptr )
 	{
 		ALOGE("RIL features: 0x%llx", *ril_features_E8F20);
 	}
-	ALOGE("%s: init (7)", __func__);
+	ALOGE("%s: init (7)", __func__);*/
+#endif
 	*s_rilenv_ptr = &rilEnv;
+#if 0
 	ALOGE("%s: init (8)", __func__);
 	property_get("ril.RildInit", &tmpVal1, *isRildInit_7DA7B_ptr);
 	ALOGE("%s: init (9)", __func__);
@@ -311,6 +316,8 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 		if ( pthread_create(&newthread, 0, get_rildreset_log, &tmpVal) < 0 && *bdbg_enable_ptr )
 			ALOGE("[*] GetLog thread creation failed. Couldn't get rild reset log");
 	}
+#endif
+#if 0
 	ALOGE("%s: init (10)", __func__);
 	Modem_Boot();
 	ALOGE("%s: init (11)", __func__);
@@ -478,6 +485,7 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 	//fputs(msg, (FILE *)((char *)&_sF + 168));
 //LABEL_34:
 	//fputs("reference-ril requires: -p <tcp port> or -d /dev/tty_device\n", (FILE *)((char *)&_sF + 168));
+#endif
 	return NULL;
 }
 
@@ -501,8 +509,21 @@ void libEvtLoading(void)
 	gBssPtr = pmparser_get_addr_start(-1, "/system/vendor/lib/libsec-ril.so", 0x7000);
 	
 	gBasePtr = origRilInit - 0x247C0;
-	if (!mprotect(gBasePtr - 1, 0xab000, PROT_READ | PROT_WRITE | PROT_EXEC))
+	if (!mprotect(gBasePtr - 1, 0xab000, PROT_READ | PROT_WRITE | PROT_EXEC)) {
 		ALOGE("%s: mprotect failed!", __func__);
+	} else {
+		ALOGE("%s: patching RIL_Init", __func__);
+		
+		// NOP OemInit*() calls
+		//memcpy(gBasePtr - 1 + 0x247EE, "\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 14);
+		
+		// NOP s_rilenv_ptr assignment
+		//memcpy(gBasePtr - 1 + 0x24856, "\x00\x46", 2);
+		
+		memcpy(gBasePtr - 1 + 0x247C6, "\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 100);
+		
+		memcpy(gBasePtr - 1 + 0x2482A,"\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46\x00\x46", 230);
+	}
 	fReal_DumpStateLog = gBasePtr + 0x3EE0C;
 
 	RLOGE("%s: RIL_Init = %x, origRil = %x, gElfPtr=%x, gBssPtr=%x, gBasePtr=%x, fReal_DumpStateLog = %x, DumpStateLog=%x", __func__, origRilInit, origRil, gElfPtr, gBssPtr, gBasePtr, fReal_DumpStateLog, dlsym(origRil, "DumpStateLog"));

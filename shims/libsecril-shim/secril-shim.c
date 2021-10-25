@@ -803,10 +803,11 @@ const RIL_RadioFunctions* RIL_Init(const struct RIL_Env *env, int argc, char **a
 			ALOGE("%s: failed to start thread! %d", __func__, rc);
 	}
 
-	if (use_oss_ril_init)
-		origRilFunctions = RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
-	else
-		origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
+	//if (use_oss_ril_init)
+	//	origRilFunctions = RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
+	//else
+	RIL_Init1(GetEnv(&shimmedEnv), argc, argv);
+	origRilFunctions = origRilInit(GetEnv(&shimmedEnv), argc, argv);
 	
 	ALOGE("%s: 1 hSecOem->hash_table=%x", __func__, hash_table);
 	ALOGE("%s: 1 hSecOem->unk1=%x", __func__, hSecOem_ptr->unk1);
