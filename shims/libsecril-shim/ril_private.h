@@ -10,8 +10,8 @@ struct ril_request {
 	int req_unk; // 4-7
 	size_t datalen; // 8-11
 	int request; // 12-15
-	void *req_handler_ptr; // 16-19
-	void *req_handler_func; // 20-23
+	int unk0; // 16-19
+	void (*req_handler_func)(); // 20-23
 	int unk1; // 24-27
 	int unk2; // 28-31
 	int unk3; // 32-35
@@ -24,7 +24,7 @@ struct ril_request {
 	int unk11; // 48-51
 	int unk12; // 52-55
 	long long unk13; // 56-63
-	int unk14; // 64-67
+	void (*unk14)(); // 64-67
 	int unk15; // 68-71
 };
 
@@ -92,9 +92,10 @@ void (*fReal_DumpStateLog)(char*, int);
 
 int *unk_E730C;
 
-int (*CreateRequest)(void *hSecOem, int request, void *data, int datalen, RIL_Token t);
-int (*SearchDataHash)(void *hash_table, int request, int *(*handler)(void *, int));
-
+struct ril_request* (*CreateRequest)(void *hSecOem, int request, void *data, int datalen, RIL_Token t);
+int (*SearchDataHash)(void *hash_table, int request, struct handler_struct *handler);
+int (*PushRequest)(int *request_table, struct ril_request *req);
+int (*InformNewEvent)(int request, void *data, size_t datalen, RIL_Token t, RIL_SOCKET_ID socket_id);
 
 /* RIL_Init */
 void (*OemInitNetwork)(struct hSecOem_struct *hSecOem_ptr);
@@ -168,6 +169,13 @@ int (*StartRilProcessor)(struct procParam_struct *param);
 long long int *ril_features_E8F20;
 struct RIL_RadioFunctions *origRilFunctions_AA368;
 
+//////////////////////////////////////////////////////////////
+
+
+void (*requestGetSIMStatus)(void *param);
+int (*sub_22CDE)();
+
+
 int *dword_AB8F4;
 int *dword_B1CA4;
 //int *dword_B1CA0;
@@ -218,6 +226,63 @@ void* print_gdb_thread_func(void *data) {
 	}
 
     return NULL;
+}
+
+void nullsub()
+{
+}
+
+struct ril_request *CreateRequest1(struct hSecOem_struct *hSecOem, int request, void *data, int datalen, RIL_Token t, void (*req_handler_func)(), int (*req_handler_func2)(), void (*req_handler_func3)())
+{
+  void *_data; // r8@1
+  struct ril_request *req; // r4@1
+	void *hash_table; // r0@1
+	int request_; // r5@1
+	int _datalen; // r6@1
+	void *v11; // r2@6
+	int req_unk_; // r0@6
+	int v14; // r3@6
+	struct handler_struct *req_handler; // [sp+14h] [bp-1Ch]@1
+
+	req = 0;
+	hash_table = hSecOem->hash_table;
+#if 0
+	if ( SearchDataHash(hash_table, request, &req_handler) != -1 )
+	{
+#endif
+		req = (struct ril_request *)malloc(0x48u);
+		if ( req )
+		{
+			if ( *bdbg_enable_ptr )
+				ALOGE(
+					"%s(): req(%p), id(%d), tok(%p) - FUNC(0x%x)",
+					"CreateRequest", __func__,
+					req,
+					request,
+					t,
+					/*req_handler->unk3*/ req_handler_func);
+			memset(req, 0, 0x48u);
+			req->unk6 = 0;
+			req->unk7 = 0;
+			req->unk8 = 0;
+			req->unk11 = -1;
+			req->unk13 = 0x7FFFFFFFFFFFFFFFLL;
+			req->request = request;
+			req->t = t;
+			req->unk0 = request; //req_handler->unk1;
+			req->req_handler_func = req_handler_func; //req_handler->unk3;
+			req->req_unk = req_handler_func2(data, datalen); //req_handler->unk4(_data, _datalen);
+			req->datalen = datalen;
+			req->unk14 = req_handler_func3; // req_handler->unk5;
+		}
+		else
+		{
+			ALOGE("%s: mem alloc error", __func__);
+		}
+#if 0
+	}
+#endif
+	return req;
 }
 
 void RIL_requestTimedCallback(RIL_TimedCallback callback,
@@ -319,6 +384,12 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 			res1 = BuildupReqHandlerHash(hSecOem_ptr);
 			if ( res1 )
 				return NULL;
+			ALOGE("%s: hash_table = %x", __func__, hSecOem_ptr->hash_table);
+			//int (*SearchDataHash)(void *hash_table, int request, int *(*handler)(void *, int));
+			struct handler_struct *tmp_handler = NULL;
+			//int res4 = SearchDataHash(hSecOem_ptr->hash_table, RIL_REQUEST_GET_SIM_STATUS, &tmp_handler);
+			int res4 = SearchDataHash(hSecOem_ptr->hash_table, RIL_REQUEST_GET_IMSI, &tmp_handler);
+			ALOGE("%s: res=%d, handler = %x, handler->unk1 = %x, handler->unk2 = %x, handler->unk3 = %x, handler->unk4 = %x, handler->unk5 = %x", __func__, res4, tmp_handler, tmp_handler->unk1, tmp_handler->unk2, tmp_handler->unk3, tmp_handler->unk4, tmp_handler->unk5);
 
 			res2 = InitEventHandling();
 			if ( res2 )
@@ -468,6 +539,8 @@ void libEvtLoading(void)
 
 	CreateRequest = gBasePtr + 0x2361C;
 	SearchDataHash = gBasePtr + 0x20668;
+	PushRequest = gBasePtr + 0x236E8;
+	InformNewEvent = gBasePtr + 0x20124;
 
 	bdbg_enable_ptr = gElfPtr + 0xAB93C;
 
@@ -561,6 +634,10 @@ void libEvtLoading(void)
 	dword_AB8F4 = gElfPtr + 0xAB8F4;
 	dword_B1CA4 = gElfPtr + 0xB1CA4;
 	//dword_B1CA0_ptr = gElfPtr + 0xB1CA0;
+	///////////////////////////////////////////////////////////////////////////
+	
+	requestGetSIMStatus = gBasePtr + 0x2798C;
+	sub_22CDE = gBasePtr + 0x22CDE;
 }
 
 void libEvtUnloading(void)

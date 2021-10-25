@@ -369,18 +369,18 @@ static RIL_RadioState onStateRequestShim() {
     return newRadioState;
 }
 
-static void onRequestShim(int request, void *data, size_t datalen, RIL_Token t)
+static void onRequestShim(int request, void *data, size_t datalen, RIL_Token t, RIL_SOCKET_ID socket_id)
 {
 	RLOGD("%s:\t\t\t\t\t>>> REQUEST\t\t\t: %s: data:%p datalen:%d token:%p\n", __FUNCTION__, requestToString(request), data, datalen, t);
+	struct ril_request *req;
 
 	switch (request) {
 		case RIL_REQUEST_GET_SIM_STATUS:
-			RLOGE("%s: RIL_REQUEST_GET_SIM_STATUS, datalen = %d, RIL_CardStatus_v5=%d, RIL_CardStatus_v6=%d, RIL_CardStatus_v5_samsung=%d", __func__, datalen, sizeof(RIL_CardStatus_v5), sizeof(RIL_CardStatus_v6), sizeof(RIL_CardStatus_v5_samsung));
-			
-			fReal_origRilFunctions->onRequest(request, data, datalen, t);
-			//CreateRequest(hSecOem_ptr, request, data, datalen, t);
+			//fReal_origRilFunctions->onRequest(request, data, datalen, t);
+			req = CreateRequest1(hSecOem_ptr, request, data, datalen, t, requestGetSIMStatus, sub_22CDE, nullsub);
+			PushRequest(request_list_E71C4, req);
+			InformNewEvent(request, data, datalen, t, socket_id);
 			return;
-			//break;
 		
                 /* Our RIL doesn't support this, so we implement this ourself */
                 case RIL_REQUEST_GET_CELL_INFO_LIST:
