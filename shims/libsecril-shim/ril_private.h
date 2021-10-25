@@ -287,8 +287,7 @@ struct RIL_RadioFunctions *RIL_Init1(const struct RIL_Env *env, int argc, char *
 		ALOGE("RIL features: 0x%llx", *ril_features_E8F20);
 	}
 	ALOGE("%s: init (7)", __func__);
-	//*s_rilenv_ptr = &rilEnv; //!!!!!!!!!!!!!!!!!!!
-	memcpy((void*)s_rilenv_ptr, (void*)rilEnv, sizeof(struct RIL_Env));
+	*s_rilenv_ptr = &rilEnv;
 	ALOGE("%s: init (8)", __func__);
 	property_get("ril.RildInit", &tmpVal1, *isRildInit_7DA7B_ptr);
 	ALOGE("%s: init (9)", __func__);
